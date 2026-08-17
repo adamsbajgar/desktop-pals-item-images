@@ -1,39 +1,43 @@
+"""Create or replace 200x200 `Small` PNG versions of the source images.
+
+Requires Pillow:
+    py -m pip install Pillow
+"""
+
+from pathlib import Path
+
 from PIL import Image
-import os
 
-# Get the folder where the script is located
-folder_path = os.path.dirname(os.path.abspath(__file__))
 
-# Go through all files in the folder
-for filename in os.listdir(folder_path):
-    file_path = os.path.join(folder_path, filename)
+FOLDER = Path(__file__).resolve().parent
+VALID_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
 
-    # Skip directories
-    if not os.path.isfile(file_path):
-        continue
 
-    # Supported image extensions
-    valid_extensions = (".png", ".jpg", ".jpeg", ".bmp", ".webp")
+def main() -> None:
+    for image_path in sorted(FOLDER.iterdir()):
+        # Existing Small files are outputs, never sources. This prevents
+        # names such as FooSmallSmall.png from being generated.
+        if (
+            not image_path.is_file()
+            or image_path.suffix.lower() not in VALID_EXTENSIONS
+            or image_path.stem.endswith("Small")
+        ):
+            continue
 
-    if filename.lower().endswith(valid_extensions):
+        output_path = image_path.with_name(f"{image_path.stem}Small.png")
         try:
-            # Open image
-            img = Image.open(file_path)
+            with Image.open(image_path) as source:
+                resized = source.resize((200, 200), Image.Resampling.LANCZOS)
+                # PNG output preserves transparency when the source has it.
+                if "A" in resized.getbands():
+                    resized = resized.convert("RGBA")
+                else:
+                    resized = resized.convert("RGB")
+                resized.save(output_path, "PNG")
+            print(f"Created or replaced: {output_path.name}")
+        except (OSError, ValueError) as error:
+            print(f"Failed processing {image_path.name}: {error}")
 
-            # Resize to 200x200
-            resized = img.resize((200, 200), Image.LANCZOS)
 
-            # Create new filename
-            name, _ = os.path.splitext(filename)
-            new_filename = f"{name}Small.png"
-            new_path = os.path.join(folder_path, new_filename)
-
-            # Save as PNG
-            resized.save(new_path, "PNG")
-
-            print(f"Created: {new_filename}")
-
-        except Exception as e:
-            print(f"Failed processing {filename}: {e}")
-
-print("Done.")
+if __name__ == "__main__":
+    main()
