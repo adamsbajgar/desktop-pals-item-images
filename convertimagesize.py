@@ -20,7 +20,7 @@ def main() -> None:
         if (
             not image_path.is_file()
             or image_path.suffix.lower() not in VALID_EXTENSIONS
-            or image_path.stem.endswith("Small")
+            or "Small" in image_path.stem
         ):
             continue
 
