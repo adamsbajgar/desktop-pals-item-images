@@ -1,6 +1,6 @@
-"""Add the Trading Carrier artwork to the bottom-right quarter of every PNG.
+"""Create the canonical Trading Carrier version of each full-size pal PNG.
 
-Each pal remains the full output canvas. `Trading Carrier.png` is resized to
+Each pal remains the full output canvas. `Trading_Carrier.png` is resized to
 fit in the pal image's bottom-right quarter.
 
 Requires Pillow:
@@ -13,8 +13,9 @@ from PIL import Image
 
 
 FOLDER = Path(__file__).resolve().parent
-CARRIER_NAME = "Trading Carrier.png"
+CARRIER_NAME = "Trading_Carrier.png"
 OUTPUT_SUFFIX = "_Carrier"
+SMALL_SUFFIX = "Small"
 
 
 def overlay_size_for(image_size: tuple[int, int], overlay_size: tuple[int, int]) -> tuple[int, int]:
@@ -27,6 +28,15 @@ def overlay_size_for(image_size: tuple[int, int], overlay_size: tuple[int, int])
     return max(1, round(overlay_width * scale)), max(1, round(overlay_height * scale))
 
 
+def is_full_size_pal(image_path: Path) -> bool:
+    """Return whether a PNG is a source pal rather than a generated output."""
+    return (
+        image_path.name != CARRIER_NAME
+        and not image_path.stem.endswith(SMALL_SUFFIX)
+        and not image_path.stem.endswith(OUTPUT_SUFFIX)
+    )
+
+
 def main() -> None:
     carrier_path = FOLDER / CARRIER_NAME
     if not carrier_path.is_file():
@@ -36,7 +46,10 @@ def main() -> None:
         carrier = source.convert("RGBA")
 
     for image_path in sorted(FOLDER.glob("*.png")):
-        if image_path.name == CARRIER_NAME or image_path.stem.endswith(OUTPUT_SUFFIX):
+        # Only full-size source pals receive a carrier.  Small files and
+        # carrier files are generated outputs, so this remains idempotent and
+        # never creates names such as FooSmall_Carrier.png.
+        if not is_full_size_pal(image_path):
             continue
 
         output_path = image_path.with_name(f"{image_path.stem}{OUTPUT_SUFFIX}.png")

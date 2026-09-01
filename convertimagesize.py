@@ -10,17 +10,21 @@ from PIL import Image
 
 
 FOLDER = Path(__file__).resolve().parent
+CARRIER_NAME = "Trading_Carrier.png"
 VALID_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
+SMALL_SUFFIX = "Small"
 
 
 def main() -> None:
     for image_path in sorted(FOLDER.iterdir()):
-        # Existing Small files are outputs, never sources. This prevents
-        # names such as FooSmallSmall.png from being generated.
+        # Existing Small files and the carrier artwork are outputs/assets,
+        # never pal sources. This prevents names such as FooSmallSmall.png
+        # and Trading_CarrierSmall.png from being generated.
         if (
             not image_path.is_file()
             or image_path.suffix.lower() not in VALID_EXTENSIONS
-            or "Small" in image_path.stem
+            or image_path.name == CARRIER_NAME
+            or image_path.stem.endswith(SMALL_SUFFIX)
         ):
             continue
 
